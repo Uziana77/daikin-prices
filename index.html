@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daikin Inventory 2025</title>
+    <style>
+        :root { --blue: #0056b3; --green: #28a745; --light-bg: #f4f7f6; }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--light-bg); margin: 0; padding: 15px; }
+        .wrapper { max-width: 800px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .header { text-align: center; margin-bottom: 25px; border-bottom: 2px solid #f1f1f1; padding-bottom: 10px; }
+        .search-bar { width: 100%; padding: 14px; border: 2px solid #eee; border-radius: 10px; font-size: 16px; margin-bottom: 20px; outline-color: var(--blue); }
+        .item { display: flex; justify-content: space-between; align-items: center; padding: 15px 10px; border-bottom: 1px solid #f9f9f9; }
+        .item:nth-child(even) { background: #fafafa; }
+        .name { font-weight: 500; font-size: 0.95rem; color: #333; padding-right: 15px; }
+        .price { font-weight: 700; color: var(--green); font-size: 1.1rem; min-width: 100px; text-align: right; }
+        .loader { text-align: center; padding: 40px; color: #666; }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <div class="header">
+        <h2 style="margin:0; color:var(--blue);">Daikin Price List</h2>
+        <p style="font-size:14px; color:#888;">Live Updates from Google Sheet</p>
+    </div>
+
+    <input type="text" id="search" class="search-bar" placeholder="Model search karein..." onkeyup="doSearch()">
+
+    <div id="loading" class="loader">🔄 Data sync ho raha hai...</div>
+    <div id="display-area"></div>
+</div>
+
+<script>
+    const CSV_LINK = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSNmatn7Yh1FGwR1q61wCBkHFHVKYmylywO2-_Hlox-zTcolSzKOve4MRtiiI9pN5_rSLsk_FdEcm-6/pub?gid=0&single=true&output=csv';
+
+    async function getData() {
+        try {
+            const response = await fetch(CSV_LINK);
+            const text = await response.text();
+            const lines = text.split('\n');
+            let html = '';
+
+            for (let i = 4; i < lines.length; i++) {
+                const parts = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                const title = parts[0]?.replace(/"/g, '').trim();
+                const rate = parts[6]?.replace(/"/g, '').trim();
+
+                if (title && rate && rate !== "0" && rate !== "") {
+                    html += `
+                        <div class="item">
+                            <div class="name">${title}</div>
+                            <div class="price">${rate}</div>
+                        </div>`;
+                }
+            }
+            document.getElementById('display-area').innerHTML = html;
+            document.getElementById('loading').style.display = 'none';
+        } catch (e) {
+            document.getElementById('loading').innerHTML = "❌ Connection error! Please refresh.";
+        }
+    }
+
+    function doSearch() {
+        let val = document.getElementById('search').value.toLowerCase();
+        let items = document.getElementsByClassName('item');
+        for (let item of items) {
+            item.style.display = item.innerText.toLowerCase().includes(val) ? "flex" : "none";
+        }
+    }
+
+    getData();
+</script>
+
+</body>
+</html>
